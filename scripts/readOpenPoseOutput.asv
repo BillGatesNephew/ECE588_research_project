@@ -4,26 +4,18 @@ function [leftHandData, rightHandData] = readOpenPoseOutput( directory, showPlot
     %       - directory - The path to the folder containing the data to use
     %       - showPlots - Optional flag specifying whether to show plots
     %   Outputs
-    %       - leftHandData  - A vector of hand data structs
-    %       - rightHandData - A vector of hand data structs
-    %
-    %% Struct Information
+    %       - leftHandData  - An array of hand data structs
+    %       - rightHandData - An array of hand data structs
+    %% Struct Infor
     %   Hand Data Struct Fields
-    %       - allX    - All x coordinate positions
-    %       - allY    - All y coordinate positions
-    %       - allC    - All confidence values
-    %       - thumb   - Finger struct representing the thumb
-    %       - pointer - Finger struct representing the pointer finger
-    %       - middle  - Finger struct representing the middle finger
-    %       - index   - Finger struct representing the index finger
-    %       - pinky   - Finger struct representing the pinky finger
+    %       - allX  - All x coordinate positions
+    %       - allY  - All y coordinate positions
+    %       - allC  - All confidence values
+    %       - thumb - Thumb finger struct
     %
-    %   Finger Data Struct Fields
-    %       - x - X Coordinate positions for the finger
-    %       - y - Y coordinate positions for the finger
-    %       - c - Confidence values for the finger
     %
-    
+    %
+    %
     %% Check For Proper Inputs
     switch nargin
         case 0 
@@ -38,7 +30,7 @@ function [leftHandData, rightHandData] = readOpenPoseOutput( directory, showPlot
     currFrame      = 1;
     
     %% Read Formatted JSON Data
-    for fileIndex = 1 : length(directoryFiles)
+    for fileIndex = 2 : length(directoryFiles)
         currentFile = directoryFiles(fileIndex);
         % Ignores Directories 
         if(~currentFile.isdir)
@@ -78,21 +70,10 @@ function [leftHandData, rightHandData] = readOpenPoseOutput( directory, showPlot
 end
 
 function [leftHandData, rightHandData] = readHandPositions(filepath)
-    %% Summary
-    %
-    %   Helper function for readOpenPoseOutput() function
-    %
-    %   Inputs
-    %      - filepath - The relative path for the file to read data from
-    %   Outputs
-    %       - leftHandData  - The left hand struct for the file's data
-    %       - rightHandData - The right hand struct for the file's data
-    %
     %% Perform Basic Setup
     leftHandRegEx = '(?<=("hand_left_keypoints":\[))[^\]]*';
     rightHandRegEx = '(?<=("hand_right_keypoints":\[))[^\]]*';
     rawText = fileread(filepath);
-    
     %% Get Hand Data
     % Left Hand
     leftHandRawText = regexp(rawText, leftHandRegEx, 'match');

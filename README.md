@@ -7,7 +7,7 @@ The project aims to build upon work done by the [OpenPose](https://github.com/CM
 * Walker Willetts
 ## Folder Descriptions
 * **scripts**
-    * The various Matlab scripts used in the project
+    * The various Matlab/Python scripts used in the project
 * **data**
     * Collection of both mock data and real data used for the project's testing and for demos
 * **misc**

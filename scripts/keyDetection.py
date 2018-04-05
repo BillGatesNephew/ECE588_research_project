@@ -16,10 +16,11 @@ KEY_MAP = [
     # Third Row
     "CAPS_LOCK", "A", "S","D","F","G","H","J","K","L",";","'","RETURN",
     # Fourth Row
-    "SHIFT","Z","X","C","V","B","N","M",",",".","/","SHIFT",
+    "SHFT1","Z","X","C","V","B","N","M",",",".","/","SHFT2",
     # Fifth Row
-    "FN","CTRL","ALT","CMD","SPACE","CMD","ALT","ARROWS"
+    "FN","CTRL","ALT1","CMD1","SPACE","CMD2","ALT2","ARROWS"
 ]
+
 
 ## General Parameters
 # Name of video being processed
@@ -28,14 +29,18 @@ videoName = 'typing_vid.mp4'
 rowBaselineThreshold = 30
 # Number of final frame windows to show
 frameNumber = 4
+# Outlier distance threshold
+outlier_distance_thresh = 1.1
 
 ## Contour Detection Parameters
 # Maximum valid size needed for a detected contour to be a key
 maxImageKeyArea = 7000  
 # Minimum valid size needed for a detected contour to be a key
-minImageKeyArea = 900   
+minImageKeyArea = 900
 # Distance between centers of keys to be considered separate contours
 distanceThreshold = 10  
+# Maximum distance between countours in separate frames to be considered the same contour
+key_movement_thresh = 10
 
 ## Text Label Parameters
 fontSize = 0.5
@@ -79,6 +84,9 @@ def center_y_position(square):
     moment = cv2.moments(square)
     return int(moment["m01"] / moment["m00"])
 
+# Calculates the center of the passed in square contour
+def get_center(square):
+    return (center_x_position(square), center_y_position(square))
 ######################################
 ## Actual Keyboard Detection Script ##
 #########################################################################
@@ -131,6 +139,24 @@ def get_key_contours(frame):
                 squares.append(cnt)
                 centerPositions.append(center)
 
+    ## Remove Keys Not Near Others Using Outlier Method ##
+    # Sort squares by Y-coordinate 
+    squares.sort(key=center_y_position, reverse=False)
+    # Determine interquartile range
+    upperQuartile = center_y_position(squares[int(len(squares) * 0.75)])
+    lowerQuartile = center_y_position(squares[int(len(squares) * 0.25)])
+    iqr = upperQuartile - lowerQuartile
+    # Determine outlier thresholds
+    lower_outlier_thresh = lowerQuartile - outlier_distance_thresh * iqr
+    upper_outlier_thresh = upperQuartile + outlier_distance_thresh * iqr
+    # Find Outliers and remove them
+    squares_without_outliers = []
+    for square in squares:
+        yPos = center_y_position(square)
+        if yPos < upper_outlier_thresh and yPos > lower_outlier_thresh:
+            squares_without_outliers.append(square)
+    squares = squares_without_outliers
+
     ## Divide Keys Detected into Rows ##
     # Sort by square center Y-coordinate to get keys ordered into "pseudo-rows" 
     squares.sort(key=center_y_position, reverse=False)
@@ -156,53 +182,117 @@ def get_key_contours(frame):
     return squares
 
 
-def draw_squares(frame, squares):
+def draw_squares(frame, curr_key_map):
     rotatedFrame = rotate_image(frame, 90)
+    if len(curr_key_map) < 61:
+        return rotatedFrame
     ## Draw The Keys with Labels and Create Location Map ##
-    for key in range(0, len(squares)):
-        if len(squares) > 61:
-            break
-        square = squares[key]
+    for key in curr_key_map:
+        square = curr_key_map[key]
         # Calculate Key Centers
-        center = (center_x_position(square), center_y_position(square))
-        # Add Key to Map
+        center = get_center(square)
         # Caclulate Text Position
-        textSize, _ = cv2.getTextSize(KEY_MAP[key],fontFamily, fontSize,fontThickness)
-        textXposition = int(center[0] - textSize[0] / 2)
-        textYposition = int(center[1] + textSize[1] / 2)
+        textSize, _ = cv2.getTextSize(key, fontFamily, fontSize, fontThickness)
+        text_center = (int(center[0] - textSize[0] / 2), int(center[1] + textSize[1] / 2))
         # Draw Squares and Text on Image
         cv2.drawContours(rotatedFrame, [square], -1, (0,255,0), 2)
-        cv2.putText(rotatedFrame, KEY_MAP[key], (textXposition, textYposition), fontFamily, fontSize, (0, 0, 255), fontThickness, cv2.LINE_AA)
+        cv2.putText(rotatedFrame, key, text_center, fontFamily, fontSize, (0, 0, 255), fontThickness, cv2.LINE_AA)
     return rotatedFrame
 
-def adjust_squares(currentFrameSquares, squares):
-    print(len(squares))
-    print(len(currentFrameSquares))
-    if len(squares) < 61:
-        return currentFrameSquares
-    if len(currentFrameSquares) < 61:
-        return squares
-    for key in range(0, len(currentFrameSquares)):
-        square = currentFrameSquares[key]
-        newCenter = (center_x_position(square), center_y_position(square))
-        oldSquare = squares[key]
-        oldCenter = (center_x_position(oldSquare), center_y_position(oldSquare))
-        if calculate_distance(newCenter, oldCenter) > 10:
-            print(calculate_distance(newCenter, oldCenter))
-            squares[key] = square
-    return squares
+
+def adjusted_key_map(curr_key_map, curr_frame_squares):
+    new_key_map = {}
+    ## Initial Case of Empty key_map ##
+    if len(curr_frame_squares) == 61:
+        for i in range(0, len(curr_frame_squares)):
+            new_key_map[KEY_MAP[i]] = curr_frame_squares[i]
+        return new_key_map  
+    if len(curr_key_map) == 0:
+        return curr_key_map
+
+    # Iterate over every keyboard key
+    not_found_keys = []
+    found_contours = []
+    for key in curr_key_map:
+        curr_key_center = get_center(curr_key_map[key])
+        new_contour = None
+        new_contour_d = 100000
+        # Find the contour in the current frame that is closest
+        # to the current contour being used for a given key and 
+        # has a distance below a certain threshold 
+        for square in curr_frame_squares:
+            square_center = get_center(square)
+            d = calculate_distance(curr_key_center, square_center)
+            if d < key_movement_thresh and d < new_contour_d:
+                new_contour = square 
+                new_contour_d = d
+        # If the new contour is found then set it in the new key map,
+        # and use its offset to adjust keys that weren't found
+        if new_contour is not None:
+            new_key_map[key] = new_contour
+            found_contours.append(new_contour)
+        else:
+            not_found_keys.append(key)
+            
+    # Adjust positions of keys that weren't found
+    found_contours.sort(key=center_y_position, reverse=False)
+    for lost_key in not_found_keys:
+        curr_lost_contour = curr_key_map[lost_key]
+        curr_lost_contour_y = center_y_position(curr_key_map[lost_key])
+        average_baseline = curr_lost_contour_y
+        similar_row_count = 1
+        for found_contour in found_contours:
+            found_contour_y = center_y_position(found_contour)
+            d = np.abs(curr_lost_contour_y - found_contour_y)
+            if d < 10: 
+                average_baseline += found_contour_y
+                similar_row_count += 1
+        average_baseline = average_baseline / similar_row_count
+        
+        y_diff = average_baseline - curr_lost_contour_y
+
+        lost_center = get_center(curr_lost_contour)
+        closest_distance = 100000
+        x_diff = 0
+        y_diff_1 = 0
+        for new_key in new_key_map:
+            if new_key in not_found_keys:
+                continue
+            new_center = get_center(new_key_map[new_key])
+            d = calculate_distance(lost_center, new_center)
+            if d < closest_distance and d < 300 :
+                closest_distance = d
+                old_center = get_center(curr_key_map[new_key])
+                (x_diff, y_diff_1) = (new_center[0] - old_center[0], new_center[1] - old_center[1])
+
+        if similar_row_count == 1:
+            y_diff = y_diff_1
+        for i in range(0,4):
+            curr_lost_contour[i][0] = curr_lost_contour[i][0] + x_diff
+            curr_lost_contour[i][1] = curr_lost_contour[i][1] + y_diff
+        found_contours.append(curr_lost_contour)
+        new_key_map[lost_key] = curr_lost_contour
+    return new_key_map
 
 ## Load and Adjust Initial Video Frame ##
 # Load in video
 cap = cv2.VideoCapture(videoName)
 
 # Play with detected keys
-squares = []
+curr_key_map = {}
 while(True):
     _,frame = cap.read()
-    currentFrameSquares = get_key_contours(frame)
-    squares = adjust_squares(currentFrameSquares, squares)
-    imageWithSquares = draw_squares(frame, squares)
+    if frame is None:
+        continue
+    curr_frame_squares = get_key_contours(frame)
+    curr_key_map = adjusted_key_map(curr_key_map, curr_frame_squares)
+    
+    imageWithSquares = draw_squares(frame, curr_key_map)
+    rows,cols,_ = imageWithSquares.shape
+    rowShift = (rows * 2) // 3
+    imageWithSquares = imageWithSquares[rowShift : rows]
+
+
     cv2.imshow('frame', imageWithSquares)
     if cv2.waitKey(1) & 0xFF == 27:
         break

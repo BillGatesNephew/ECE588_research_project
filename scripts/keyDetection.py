@@ -205,12 +205,17 @@ def get_key_contours(frame):
     return squares
 
 
-def draw_squares(frame, curr_key_map):
+def draw_squares(frame, curr_key_map, key_hidden, hide_keys):
     rotatedFrame = rotate_image(frame, 90)
     if len(curr_key_map) < 61:
         return rotatedFrame
+    keys_shown = 61
     ## Draw The Keys with Labels and Create Location Map ##
     for key in curr_key_map:
+        if key_hidden[key]:
+            keys_shown -= 1
+        if hide_keys and key_hidden[key]:
+            continue 
         square = curr_key_map[key]
         # Calculate Key Centers
         center = get_center(square)
@@ -220,23 +225,31 @@ def draw_squares(frame, curr_key_map):
         # Draw Squares and Text on Image
         cv2.drawContours(rotatedFrame, [square], -1, (0,255,0), 2)
         cv2.putText(rotatedFrame, key, text_center, fontFamily, fontSize, (0, 0, 255), fontThickness, cv2.LINE_AA)
+    # Write number of keys found
+    height, width, _ = rotatedFrame.shape
+    text_center = (width // 20, height // 20 )
+    textSize, _ = cv2.getTextSize("Keys Detected: " + str(keys_shown), fontFamily, 2*fontSize, fontThickness)
+    cv2.putText(rotatedFrame, "Keys Detected: " + str(keys_shown), text_center, fontFamily, 2*fontSize, (0, 255, 0), fontThickness, cv2.LINE_AA)
     return rotatedFrame
 
 
 def adjusted_key_map(curr_key_map, curr_frame_squares):
     new_key_map = {}
+    key_hidden = {}
     ## Initial Case of Empty key_map ##
     if len(curr_frame_squares) == 61:
         for i in range(0, len(curr_frame_squares)):
             new_key_map[KEY_MAP[i]] = curr_frame_squares[i]
-        return new_key_map  
+            key_hidden[KEY_MAP[i]] = False
+        return new_key_map, key_hidden 
     if len(curr_key_map) == 0:
-        return curr_key_map
+        return curr_key_map, None 
 
     # Iterate over every keyboard key
     not_found_keys = []
     found_contours = []
     for key in curr_key_map:
+        key_hidden[key] = False
         curr_key_center = get_center(curr_key_map[key])
         new_contour = None
         new_contour_d = 100000
@@ -256,6 +269,7 @@ def adjusted_key_map(curr_key_map, curr_frame_squares):
             found_contours.append(new_contour)
         else:
             not_found_keys.append(key)
+            key_hidden[key] = True
             
     # Adjust positions of keys that weren't found
     found_contours.sort(key=center_y_position, reverse=False)
@@ -295,7 +309,7 @@ def adjusted_key_map(curr_key_map, curr_frame_squares):
             curr_lost_contour[i][1] = curr_lost_contour[i][1] + y_diff
         found_contours.append(curr_lost_contour)
         new_key_map[lost_key] = curr_lost_contour
-    return new_key_map
+    return new_key_map, key_hidden
 
 def print_key_map(key_map):
     print("       Key |   Top Left   |   Top Right  |  Bottom Left | Bottom Right")
@@ -326,12 +340,12 @@ while(True):
         map_printed = True
 
     curr_frame_squares = get_key_contours(frame)
-    curr_key_map = adjusted_key_map(curr_key_map, curr_frame_squares)
+    curr_key_map,key_hidden = adjusted_key_map(curr_key_map, curr_frame_squares)
     
-    imageWithSquares = draw_squares(frame, curr_key_map)
-    rows,cols,_ = imageWithSquares.shape
-    rowShift = (rows * 2) // 3
-    imageWithSquares = imageWithSquares[rowShift : rows]
+    imageWithSquares = draw_squares(frame, curr_key_map, key_hidden, False)
+    #rows,cols,_ = imageWithSquares.shape
+    #rowShift = (rows * 2) // 3
+    #imageWithSquares = imageWithSquares[rowShift : rows]
 
     cv2.imshow('frame', imageWithSquares)
     if cv2.waitKey(1) & 0xFF == 27:

@@ -87,6 +87,29 @@ def center_y_position(square):
 # Calculates the center of the passed in square contour
 def get_center(square):
     return (center_x_position(square), center_y_position(square))
+
+# Returns the corners for a given contour in the following order:
+# [top left, top right, bottom left, bottom right]
+def extract_corners(square):
+    # Sort by Y-coordinates
+    square = sorted(square, key=lambda corner: corner[1], reverse=False)
+    # Determine Top Left and Top Right
+    if square[0][0] < square[1][0]:
+        tl = square[0]
+        tr = square[1]
+    else:
+        tl = square[1]
+        tr = square[0]
+    # Determine Bottom Left and Bottom Right
+    if square[2][0] < square[3][0]:
+        bl = square[2]
+        br = square[3]
+    else:
+        bl = square[3]
+        br = square[2]
+    return [tl, tr, bl, br]
+
+
 ######################################
 ## Actual Keyboard Detection Script ##
 #########################################################################
@@ -274,16 +297,34 @@ def adjusted_key_map(curr_key_map, curr_frame_squares):
         new_key_map[lost_key] = curr_lost_contour
     return new_key_map
 
+def print_key_map(key_map):
+    print("       Key |   Top Left   |   Top Right  |  Bottom Left | Bottom Right")
+    print("-----------------------------------------------------------------------------")
+    for key in key_map:
+        corners = extract_corners(key_map[key])
+        top_left = corners[0]
+        top_right = corners[1]
+        bottom_left = corners[2]
+        bottom_right = corners[3]
+        format_tuple = (key, top_left[0], top_left[1], top_right[0], top_right[1], bottom_left[0], bottom_left[1], bottom_right[0], bottom_right[1])
+        print(" %9s | [%4d, %4d] | [%4d, %4d] | [%4d, %4d] | [%4d, %4d]" % format_tuple)
+        
 ## Load and Adjust Initial Video Frame ##
 # Load in video
 cap = cv2.VideoCapture(videoName)
 
 # Play with detected keys
 curr_key_map = {}
+map_printed = False
 while(True):
-    _,frame = cap.read()
-    if frame is None:
-        continue
+    more_frames_left, frame = cap.read()
+    if not more_frames_left:
+        break  
+    
+    if not map_printed and len(curr_key_map) == 61:
+        print_key_map(curr_key_map)
+        map_printed = True
+
     curr_frame_squares = get_key_contours(frame)
     curr_key_map = adjusted_key_map(curr_key_map, curr_frame_squares)
     
@@ -292,12 +333,11 @@ while(True):
     rowShift = (rows * 2) // 3
     imageWithSquares = imageWithSquares[rowShift : rows]
 
-
     cv2.imshow('frame', imageWithSquares)
     if cv2.waitKey(1) & 0xFF == 27:
         break
 
-if cv2.waitKey(0) & 0xff == 27:
-    cap.release()
-    cv2.destroyAllWindows()
+
+cap.release()
+cv2.destroyAllWindows()
 

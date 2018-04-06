@@ -75,6 +75,8 @@ classdef keyboard2 < handle
              
              obj.SetAppleKeyboard();
              obj.fingerDerivative();
+             obj.unidirectionalCumulativeDerivative();
+             obj.keyArray = {};
         end
         function SetAppleKeyboard(obj)
             obj.keyArray = {{'esc','f1','f2','f3','f4','f5','f6','f7','f8','f9','f10','f11','f12','Power'};...
@@ -100,7 +102,10 @@ classdef keyboard2 < handle
             figure
            
             for currFrame = 1 : obj.totalFrames
-                hold off
+                clf('reset')
+                if(currFrame == 200);
+                    temp = 0;
+                end
                 for currKey = 1 : obj.totalKeys
                     Vertices(1:4,1:2) = obj.keyAreaArray(:,:,currKey);
                     Vertices(5:8,1:2) = obj.keyAreaArray(:,:,currKey);
@@ -108,68 +113,119 @@ classdef keyboard2 < handle
                     
                     Vertices(5:8,3) =  sum(squeeze(obj.fingersInsideKey(:,currKey, currFrame)));
                     Faces = [1 2 3 4; 1 4 8 5; 4 3 7 8; 2 3 7 6; 1 2 6 5; 5 6 7 8]; % 3 4 7 8; 2 4 6 8; 1 2 5 6; 5 6 7 8
-                    
-                    patch('Vertices', Vertices, 'Faces', Faces, 'FaceColor', 'g');
+                    if(sum(squeeze(obj.fingersInsideKey(:,currKey, currFrame))))
+                        patch('Vertices', Vertices, 'Faces', Faces, 'FaceColor', 'r');
+                    else
+                        patch('Vertices', Vertices, 'Faces', Faces, 'FaceColor', 'g');
+                    end
                     hold on
                     
                 end
-                F(currFrame) = getframe(gcf);
+                temp = 0;
+                pause(0.1)
+                currFrame
+%                 F(currFrame) = getframe(gcf);
             end
-            obj.outputFrames = F;
+%             obj.outputFrames = F;
         end
         function DetermineAllKeyHover(obj)
             %Check Hand Data for each finger
             for currKeyNumber = 1 : obj.totalKeys
-                currKeyX = squeeze(obj.keyAreaArray(:,1,currKeyNumber));
-                currKeyY = squeeze(obj.keyAreaArray(:,2,currKeyNumber));
+                currKeyX = squeeze(obj.keyAreaArray(:,2,currKeyNumber));
+                currKeyY = squeeze(obj.keyAreaArray(:,1,currKeyNumber));
                 currKeyX(end+1) = currKeyX(1);
                 currKeyY(end+1) = currKeyY(1);
                 
-                
-                obj.fingersInsideKey(1,currKeyNumber,:) = inpolygon(currKeyX, currKeyY, obj.leftHandData.thumb.x(:,end), obj.leftHandData.thumb.y(:,end));
-                obj.fingersInsideKey(2,currKeyNumber,:) = inpolygon(currKeyX, currKeyY, obj.leftHandData.pointer.x(:,end), obj.leftHandData.pointer.y(:,end));
-                obj.fingersInsideKey(3,currKeyNumber,:) = inpolygon(currKeyX, currKeyY, obj.leftHandData.middle.x(:,end), obj.leftHandData.middle.y(:,end));
-                obj.fingersInsideKey(4,currKeyNumber,:) = inpolygon(currKeyX, currKeyY, obj.leftHandData.index.x(:,end), obj.leftHandData.index.y(:,end));
-                obj.fingersInsideKey(5,currKeyNumber,:) = inpolygon(currKeyX, currKeyY, obj.leftHandData.pinky.x(:,end), obj.leftHandData.pinky.y(:,end));
-                obj.fingersInsideKey(6,currKeyNumber,:) = inpolygon(currKeyX, currKeyY, obj.rightHandData.thumb.x(:,end), obj.rightHandData.thumb.y(:,end));
-                obj.fingersInsideKey(7,currKeyNumber,:) = inpolygon(currKeyX, currKeyY, obj.rightHandData.pointer.x(:,end), obj.rightHandData.pointer.y(:,end));
-                obj.fingersInsideKey(8,currKeyNumber,:) = inpolygon(currKeyX, currKeyY, obj.rightHandData.middle.x(:,end), obj.rightHandData.middle.y(:,end));
-                obj.fingersInsideKey(9,currKeyNumber,:) = inpolygon(currKeyX, currKeyY, obj.rightHandData.index.x(:,end), obj.rightHandData.index.y(:,end));
-                obj.fingersInsideKey(10,currKeyNumber,:) = inpolygon(currKeyX, currKeyY, obj.rightHandData.pinky.x(:,end), obj.rightHandData.pinky.y(:,end));
-                
+                if(currKeyNumber == 42)
+                    temp = 0;
+                end 
+                for j = 1 : obj.totalFrames
+                    if(j == 200)
+                        temp = 0;
+                    end
+                    obj.fingersInsideKey(1,currKeyNumber,j) = inpolygon(obj.leftHandData(j).thumb.x(end), obj.leftHandData(j).thumb.y(end),currKeyX, currKeyY);
+                    obj.fingersInsideKey(2,currKeyNumber,j) = inpolygon(obj.leftHandData(j).pointer.x(end), obj.leftHandData(j).pointer.y(end),currKeyX, currKeyY);
+                    obj.fingersInsideKey(3,currKeyNumber,j) = inpolygon(obj.leftHandData(j).middle.x(end), obj.leftHandData(j).middle.y(end),currKeyX, currKeyY);
+                    obj.fingersInsideKey(4,currKeyNumber,j) = inpolygon(obj.leftHandData(j).index.x(end), obj.leftHandData(j).index.y(end),currKeyX, currKeyY);
+                    obj.fingersInsideKey(5,currKeyNumber,j) = inpolygon(obj.leftHandData(j).pinky.x(end), obj.leftHandData(j).pinky.y(end),currKeyX, currKeyY);
+                    obj.fingersInsideKey(6,currKeyNumber,j) = inpolygon(obj.rightHandData(j).thumb.x(end), obj.rightHandData(j).thumb.y(end),currKeyX, currKeyY);
+                    obj.fingersInsideKey(7,currKeyNumber,j) = inpolygon(obj.rightHandData(j).pointer.x(end), obj.rightHandData(j).pointer.y(end),currKeyX, currKeyY);
+                    obj.fingersInsideKey(8,currKeyNumber,j) = inpolygon(obj.rightHandData(j).middle.x(end), obj.rightHandData(j).middle.y(end),currKeyX, currKeyY);
+                    obj.fingersInsideKey(9,currKeyNumber,j) = inpolygon(obj.rightHandData(j).index.x(end), obj.rightHandData(j).index.y(end),currKeyX, currKeyY);
+                    obj.fingersInsideKey(10,currKeyNumber,j) = inpolygon(obj.rightHandData(j).pinky.x(end), obj.rightHandData(j).pinky.y(end),currKeyX, currKeyY);
+                end
             end
             
         end
-        function plotFingerDerivative(obj)
+        function PlotFingerDerivative(obj)
             figure
             hold on
             for i = 1  : obj.totalFrames - 1
                 plot(i, obj.leftHandData(i).thumbMovement.x(1), 'm*');
                 plot(i, obj.leftHandData(i).thumbMovement.y(1), 'mo');
                 
-                plot(i, obj.leftHandData(i).thumbMovement.x(end), 'r*');
-                plot(i, obj.leftHandData(i).thumbMovement.y(end), 'ro');
+                plot(i, obj.rightHandData(i).thumbMovement.x(1), 'y*');
+                plot(i, obj.rightHandData(i).thumbMovement.y(1), 'yo');
                 
-                plot(i, obj.leftHandData(i).pointerMovement.x(1), 'r*');
-                plot(i, obj.leftHandData(i).pointerMovement.y(1), 'ro');
-                
-                plot(i, obj.leftHandData(i).pointerMovement.x(end), 'g*');
-                plot(i, obj.leftHandData(i).pointerMovement.y(end), 'go');
-                
-                plot(i, obj.leftHandData(i).middleMovement.x(end), 'k*');
-                plot(i, obj.leftHandData(i).middleMovement.y(end), 'ko');
-                
-                
-                plot(i, obj.leftHandData(i).indexMovement.x(end), 'b*');
-                plot(i, obj.leftHandData(i).indexMovement.y(end), 'bo');
-                
-                
-                plot(i, obj.leftHandData(i).pinkyMovement.x(end), 'c*');
-                plot(i, obj.leftHandData(i).pinkyMovement.y(end), 'co');
+                %                 plot(i, obj.leftHandData(i).thumbMovement.x(end), 'r*');
+                %                 plot(i, obj.leftHandData(i).thumbMovement.y(end), 'ro');
+                %
+                if(abs(obj.leftHandData(i).pointerMovement.x(1)) > 5)
+                    plot(i, obj.leftHandData(i).pointerMovement.x(end), 'g*');
+                    plot(i, obj.leftHandData(i).pointerMovement.y(end), 'go');
+                end
+                plot(i, obj.leftHandData(i).pointerCumulativeMovement.x(end), 'r*')
+                %                 plot(i, obj.leftHandData(i).pointerMovement.x(end), 'g*');
+                %                 plot(i, obj.leftHandData(i).pointerMovement.y(end), 'go');
+                %
+                %                 plot(i, obj.leftHandData(i).middleMovement.x(end), 'k*');
+                %                 plot(i, obj.leftHandData(i).middleMovement.y(end), 'ko');
+                %
+                %
+                %                 plot(i, obj.leftHandData(i).indexMovement.x(end), 'b*');
+                %                 plot(i, obj.leftHandData(i).indexMovement.y(end), 'bo');
+                %
+                %
+                %                 plot(i, obj.leftHandData(i).pinkyMovement.x(end), 'c*');
+                %                 plot(i, obj.leftHandData(i).pinkyMovement.y(end), 'co');
                 
             end
         end
-        function fingerDerivative(obj)
+        function UnidirectionalCumulativeDerivative(obj)
+            
+            obj.leftHandData(1).pointerCumulativeMovement.x = obj.leftHandData(1).pointerMovement.x;
+            for i = 2 : obj.totalFrames - 1
+                movementDirection = sign(obj.leftHandData(i-1).pointerMovement.x);
+                movementDirection2 = sign(obj.leftHandData(i).pointerMovement.x);
+                for j = 1 : length(movementDirection)
+                    if(movementDirection == movementDirection2)
+                        obj.leftHandData(i).pointerCumulativeMovement.x(j) = obj.leftHandData(i-1).pointerCumulativeMovement.x(j) + obj.leftHandData(i).pointerMovement.x(j);
+                    else
+                        obj.leftHandData(i).pointerCumulativeMovement.x(j) = obj.leftHandData(i).pointerMovement.x(j);
+                    end
+                end
+            end
+        end
+        function KeyPositionReader(obj, fileLocation)
+            fid = fopen(fileLocation, 'r');
+            tline = fgetl(fid);
+            tline = fgetl(fid);
+            tline = fgetl(fid);
+            currKey = 0;
+            while ischar(tline)
+                
+                tline = strrep(tline, '[', '');
+                tline = strrep(tline, ']', '');
+                keyData = textscan(tline, '%s%f%f%f%f%f%f%f%f', 'Delimiter', {'|', ','});
+                obj.keyArray{currKey+1} = keyData{1};
+                obj.keyAreaArray(:,:,currKey+1) = [1080-keyData{2}, keyData{3}; 1080-keyData{4}, keyData{5}; 1080-keyData{8}, keyData{9}; 1080-keyData{6}, keyData{7}];                
+                tline = fgetl(fid);
+                currKey = currKey + 1;
+            end
+            obj.totalKeys = currKey;
+            fclose(fid);
+        end
+        function FingerDerivative(obj)
 %             for i = 1 : length(obj.leftHandData.thumb.x(
               for i = 2 : obj.totalFrames
                   obj.leftHandData(i-1).thumbMovement.x = obj.leftHandData(i-1).thumb.x - obj.leftHandData(i).thumb.x;
@@ -203,7 +259,7 @@ classdef keyboard2 < handle
                   obj.rightHandData(i-1).pinkyMovement.y = obj.rightHandData(i-1).pinky.y - obj.rightHandData(i).pinky.y;
               end
         end
-        function sliderHandPlot(obj)
+        function SliderHandPlot(obj)
             obj.F = figure;
             H = uicontrol(obj.F, 'style', 'slider', 'Min', 1, 'Max', obj.totalFrames, 'Value', 1, 'Position', [0 0 480 20]);
             addlistener(H, 'Value', 'PostSet', @myCallBack);
@@ -360,18 +416,35 @@ classdef keyboard2 < handle
             end
         end
        
-        function handVideo(obj)
-            h = figure;
+        function HandVideo(obj)
+            h = figure('units', 'normalized', 'outerposition', [0 0 1 1]);
             v = VideoWriter('Typing_Fingers.avi');
             vIn = VideoReader(obj.videoLocation);
            
             open(v);
             for i = 1 : obj.totalFrames
-                ax = subplot(1,2,1)
+                 ax = subplot(1,2,1);
                 videoFrame = readFrame(vIn);
                 h = image(videoFrame);
                 
                 hold on;
+                for currKey = 1 : obj.totalKeys
+                    Vertices(1:4,1:2) = obj.keyAreaArray(:,:,currKey);
+                    Vertices(5:8,1:2) = obj.keyAreaArray(:,:,currKey);
+                    temp = Vertices(:,1);
+                    Vertices(:,1) = Vertices(:,2);
+                    Vertices(:,2) = temp;
+                    Vertices(1:4,3) = 0;
+                    
+                    Vertices(5:8,3) =  sum(squeeze(obj.fingersInsideKey(:,currKey, i)));
+                    Faces = [1 2 3 4; 1 4 8 5; 4 3 7 8; 2 3 7 6; 1 2 6 5; 5 6 7 8]; % 3 4 7 8; 2 4 6 8; 1 2 5 6; 5 6 7 8
+                    if(sum(squeeze(obj.fingersInsideKey(:,currKey, i))))
+                        patch('Vertices', Vertices, 'Faces', Faces, 'FaceColor', 'r', 'FaceAlpha', '0.2');
+                    else
+                        patch('Vertices', Vertices, 'Faces', Faces, 'FaceColor', 'g', 'FaceAlpha', '0.2');
+                    end
+                end
+                
                 plot(obj.leftHandData(i).thumb.x,obj.leftHandData(i).thumb.y);
                 plot(obj.leftHandData(i).pointer.x,obj.leftHandData(i).pointer.y);
                 plot(obj.leftHandData(i).middle.x,obj.leftHandData(i).middle.y);
@@ -385,35 +458,35 @@ classdef keyboard2 < handle
                 h = plot(obj.rightHandData(i).pinky.x,obj.rightHandData(i).pinky.y);
                 hold off;
                 view([90 90])
-                subplot(1,2,2)
-                
-                plot(1, obj.leftHandData(i).thumbMovement.x(1), 'r*');
-                hold on;
-                plot(1, obj.leftHandData(i).thumbMovement.y(1), 'ro');
-                plot(1, obj.leftHandData(i).thumbMovement.x(end), 'g*');
-                plot(1, obj.leftHandData(i).thumbMovement.y(end), 'go');
-                
-                plot(2, obj.leftHandData(i).pointerMovement.x(1), 'r*');
-                plot(2, obj.leftHandData(i).pointerMovement.y(1), 'ro');
-                plot(2, obj.leftHandData(i).pointerMovement.x(end), 'g*');
-                plot(2, obj.leftHandData(i).pointerMovement.y(end), 'go');
-                
-                plot(3, obj.leftHandData(i).middleMovement.x(1), 'r*');
-                plot(3, obj.leftHandData(i).middleMovement.y(1), 'ro');
-                plot(3, obj.leftHandData(i).middleMovement.x(end), 'g*');
-                plot(3, obj.leftHandData(i).middleMovement.y(end), 'go');
-                
-                plot(4, obj.leftHandData(i).indexMovement.x(1), 'r*');
-                plot(4, obj.leftHandData(i).indexMovement.y(1), 'ro');
-                plot(4, obj.leftHandData(i).indexMovement.x(end), 'g*');
-                plot(4, obj.leftHandData(i).indexMovement.y(end), 'go');
-                
-                plot(5, obj.leftHandData(i).pinkyMovement.x(1), 'r*');
-                plot(5, obj.leftHandData(i).pinkyMovement.y(1), 'ro');
-                plot(5, obj.leftHandData(i).pinkyMovement.x(end), 'g*');
-                plot(5, obj.leftHandData(i).pinkyMovement.y(end), 'go');
-                hold off;
-                pause(0.1)
+%                 subplot(1,2,2)
+%                 
+%                 plot(1, obj.leftHandData(i).thumbMovement.x(1), 'r*');
+%                 hold on;
+%                 plot(1, obj.leftHandData(i).thumbMovement.y(1), 'ro');
+%                 plot(1, obj.leftHandData(i).thumbMovement.x(end), 'g*');
+%                 plot(1, obj.leftHandData(i).thumbMovement.y(end), 'go');
+%                 
+%                 plot(2, obj.leftHandData(i).pointerMovement.x(1), 'r*');
+%                 plot(2, obj.leftHandData(i).pointerMovement.y(1), 'ro');
+%                 plot(2, obj.leftHandData(i).pointerMovement.x(end), 'g*');
+%                 plot(2, obj.leftHandData(i).pointerMovement.y(end), 'go');
+%                 
+%                 plot(3, obj.leftHandData(i).middleMovement.x(1), 'r*');
+%                 plot(3, obj.leftHandData(i).middleMovement.y(1), 'ro');
+%                 plot(3, obj.leftHandData(i).middleMovement.x(end), 'g*');
+%                 plot(3, obj.leftHandData(i).middleMovement.y(end), 'go');
+%                 
+%                 plot(4, obj.leftHandData(i).indexMovement.x(1), 'r*');
+%                 plot(4, obj.leftHandData(i).indexMovement.y(1), 'ro');
+%                 plot(4, obj.leftHandData(i).indexMovement.x(end), 'g*');
+%                 plot(4, obj.leftHandData(i).indexMovement.y(end), 'go');
+%                 
+%                 plot(5, obj.leftHandData(i).pinkyMovement.x(1), 'r*');
+%                 plot(5, obj.leftHandData(i).pinkyMovement.y(1), 'ro');
+%                 plot(5, obj.leftHandData(i).pinkyMovement.x(end), 'g*');
+%                 plot(5, obj.leftHandData(i).pinkyMovement.y(end), 'go');
+%                 hold off;
+%                 pause(0.1)
                 F(i) = getframe();
                 writeVideo(v,F(i));
                 

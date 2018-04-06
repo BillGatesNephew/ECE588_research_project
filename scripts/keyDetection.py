@@ -321,7 +321,7 @@ def print_key_map(key_map):
         bottom_left = corners[2]
         bottom_right = corners[3]
         format_tuple = (key, top_left[0], top_left[1], top_right[0], top_right[1], bottom_left[0], bottom_left[1], bottom_right[0], bottom_right[1])
-        print(" %9s | [%4d, %4d] | [%4d, %4d] | [%4d, %4d] | [%4d, %4d]" % format_tuple)
+        print(" %9s | [%4d %4d] | [%4d %4d] | [%4d %4d] | [%4d %4d]" % format_tuple)
         
 ## Load and Adjust Initial Video Frame ##
 # Load in video
@@ -343,9 +343,9 @@ while(True):
     curr_key_map,key_hidden = adjusted_key_map(curr_key_map, curr_frame_squares)
     
     imageWithSquares = draw_squares(frame, curr_key_map, key_hidden, False)
-    #rows,cols,_ = imageWithSquares.shape
-    #rowShift = (rows * 2) // 3
-    #imageWithSquares = imageWithSquares[rowShift : rows]
+    rows,cols,_ = imageWithSquares.shape
+    rowShift = (rows * 2) // 3
+    imageWithSquares = imageWithSquares[rowShift : rows]
 
     cv2.imshow('frame', imageWithSquares)
     if cv2.waitKey(1) & 0xFF == 27:

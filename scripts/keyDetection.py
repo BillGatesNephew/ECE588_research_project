@@ -323,6 +323,20 @@ def print_key_map(key_map):
         format_tuple = (key, top_left[0], top_left[1], top_right[0], top_right[1], bottom_left[0], bottom_left[1], bottom_right[0], bottom_right[1])
         print(" %9s | [%4d %4d] | [%4d %4d] | [%4d %4d] | [%4d %4d]" % format_tuple)
         
+def create_file(frame_number, key_map):
+    new_file = open("../data/key_locations/frame_"+ str(frame_number) +".txt", "w+");
+    new_file.write("       Key |   Top Left   |   Top Right  |  Bottom Left | Bottom Right\n")
+    new_file.write("-----------------------------------------------------------------------------\n")
+    for key in key_map:
+        corners = extract_corners(key_map[key])
+        top_left = corners[0]
+        top_right = corners[1]
+        bottom_left = corners[2]
+        bottom_right = corners[3]
+        format_tuple = (key, top_left[0], top_left[1], top_right[0], top_right[1], bottom_left[0], bottom_left[1], bottom_right[0], bottom_right[1])
+        new_file.write(" %9s | [%4d %4d] | [%4d %4d] | [%4d %4d] | [%4d %4d]\n" % format_tuple)
+    new_file.close()
+
 ## Load and Adjust Initial Video Frame ##
 # Load in video
 cap = cv2.VideoCapture(videoName)
@@ -330,6 +344,7 @@ cap = cv2.VideoCapture(videoName)
 # Play with detected keys
 curr_key_map = {}
 map_printed = False
+curr_frame = 0
 while(True):
     more_frames_left, frame = cap.read()
     if not more_frames_left:
@@ -346,8 +361,11 @@ while(True):
     rows,cols,_ = imageWithSquares.shape
     rowShift = (rows * 2) // 3
     imageWithSquares = imageWithSquares[rowShift : rows]
-
     cv2.imshow('frame', imageWithSquares)
+
+    create_file(curr_frame, curr_key_map)
+    curr_frame = curr_frame + 1
+
     if cv2.waitKey(1) & 0xFF == 27:
         break
 

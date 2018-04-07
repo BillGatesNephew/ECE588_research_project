@@ -15,7 +15,7 @@ classdef keyboard2 < handle
         ax2;
     end
     methods
-        function obj = keyboard2(VideoLocation, OpenPoseFolder, OpenPoseResolution)
+        function obj = keyboard2(VideoLocation, OpenPoseFolder, KeyAreaFileLocation)
             obj.keyArray = {};
             obj.keyAreaArray = [];
             obj.totalKeys = 0;
@@ -32,50 +32,16 @@ classdef keyboard2 < handle
             end
            
             
-            if(nargin>=3)
-                obj.openPoseResolution = OpenPoseResolution; % should be 2 dimensional matrix
-            else
-                %Ask for User Input
-            end
+            
              %Convert obj.leftHandData and obj.rightHandData back to original video resolution
             
                  obj.totalFrames = length(obj.leftHandData);
-%                  v = VideoReader(obj.videoLocation);
-%                  obj.videoFrames = uint8(obj.totalFrames, 1080, 1920, 3);
-%                  for i = 1 : obj.totalFrames
-% %                      obj.videoFrames(i,:,:,:) = readFrame(v);
-%                  end
-%                  for j = 1 : obj.totalFrames
-%                     obj.leftHandData(j).allX = obj.leftHandData(j).allX/obj.openPoseResolution(1) .* obj.videoData.Width;
-%                     obj.leftHandData(j).allY = obj.leftHandData(j).allY/obj.openPoseResolution(2) .* obj.videoData.Height;
-%                     obj.leftHandData(j).thumb.x = obj.leftHandData(j).thumb.x/obj.openPoseResolution(1) .* obj.videoData.Width;
-%                     obj.leftHandData(j).thumb.y = obj.leftHandData(j).thumb.y/obj.openPoseResolution(2) .* obj.videoData.Height;
-%                     obj.leftHandData(j).pointer.x = obj.leftHandData(j).pointer.x/obj.openPoseResolution(1) .* obj.videoData.Width;
-%                     obj.leftHandData(j).pointer.y = obj.leftHandData(j).pointer.y/obj.openPoseResolution(2) .* obj.videoData.Height;
-%                     obj.leftHandData(j).middle.x = obj.leftHandData(j).middle.x/obj.openPoseResolution(1) .* obj.videoData.Width;
-%                     obj.leftHandData(j).middle.y = obj.leftHandData(j).middle.y/obj.openPoseResolution(2) .* obj.videoData.Height;
-%                     obj.leftHandData(j).index.x = obj.leftHandData(j).index.x/obj.openPoseResolution(1) .* obj.videoData.Width;
-%                     obj.leftHandData(j).index.y = obj.leftHandData(j).index.y/obj.openPoseResolution(2) .* obj.videoData.Height;
-%                     obj.leftHandData(j).pinky.x = obj.leftHandData(j).pinky.x/obj.openPoseResolution(1) .* obj.videoData.Width;
-%                     obj.leftHandData(j).pinky.y = obj.leftHandData(j).pinky.y/obj.openPoseResolution(2) .* obj.videoData.Height;
-%                     
-%                     obj.rightHandData(j).allX = obj.rightHandData(j).allX/obj.openPoseResolution(1) .* obj.videoData.Width;
-%                     obj.rightHandData(j).allY = obj.rightHandData(j).allY/obj.openPoseResolution(2) .* obj.videoData.Height;
-%                     obj.rightHandData(j).thumb.x = obj.rightHandData(j).thumb.x/obj.openPoseResolution(1) .* obj.videoData.Width;
-%                     obj.rightHandData(j).thumb.y = obj.rightHandData(j).thumb.y/obj.openPoseResolution(2) .* obj.videoData.Height;
-%                     obj.rightHandData(j).pointer.x = obj.rightHandData(j).pointer.x/obj.openPoseResolution(1) .* obj.videoData.Width;
-%                     obj.rightHandData(j).pointer.y = obj.rightHandData(j).pointer.y/obj.openPoseResolution(2) .* obj.videoData.Height;
-%                     obj.rightHandData(j).middle.x = obj.rightHandData(j).middle.x/obj.openPoseResolution(1) .* obj.videoData.Width;
-%                     obj.rightHandData(j).middle.y = obj.rightHandData(j).middle.y/obj.openPoseResolution(2) .* obj.videoData.Height;
-%                     obj.rightHandData(j).index.x = obj.rightHandData(j).index.x/obj.openPoseResolution(1) .* obj.videoData.Width;
-%                     obj.rightHandData(j).index.y = obj.rightHandData(j).index.y/obj.openPoseResolution(2) .* obj.videoData.Height;
-%                     obj.rightHandData(j).pinky.x = obj.rightHandData(j).pinky.x/obj.openPoseResolution(1) .* obj.videoData.Width;
-%                     obj.rightHandData(j).pinky.y = obj.rightHandData(j).pinky.y/obj.openPoseResolution(2) .* obj.videoData.Height;
-%                  end
-             
+
              obj.SetAppleKeyboard();
-             obj.fingerDerivative();
-             obj.unidirectionalCumulativeDerivative();
+             obj.FingerDerivative();
+             obj.UnidirectionalCumulativeDerivative();
+             obj.KeyPositionReader(KeyAreaFileLocation);
+             obj.DetermineAllKeyHover();
              obj.keyArray = {};
         end
         function SetAppleKeyboard(obj)
@@ -417,7 +383,7 @@ classdef keyboard2 < handle
         end
        
         function HandVideo(obj)
-            h = figure('units', 'normalized', 'outerposition', [0 0 1 1]);
+            h = figure;%('units', 'normalized', 'outerposition', [0 0 1 1]);
             v = VideoWriter('Typing_Fingers.avi');
             vIn = VideoReader(obj.videoLocation);
            

@@ -324,7 +324,14 @@ def print_key_map(key_map):
         print(" %9s | [%4d %4d] | [%4d %4d] | [%4d %4d] | [%4d %4d]" % format_tuple)
         
 def create_file(frame_number, key_map):
-    new_file = open("../data/key_locations/frame_"+ str(frame_number) +".txt", "w+");
+    frame_text = str(frame_number)
+    if frame_number < 10:
+        frame_text = "0" + frame_text
+    if frame_number < 100:
+        frame_text = "0" + frame_text
+    if frame_number < 1000: 
+        frame_text = "0" + frame_text
+    new_file = open("../data/key_locations/frame_"+ frame_text +".txt", "w+");
     new_file.write("       Key |   Top Left   |   Top Right  |  Bottom Left | Bottom Right\n")
     new_file.write("-----------------------------------------------------------------------------\n")
     for key in key_map:
@@ -351,7 +358,7 @@ while(True):
         break  
     
     if not map_printed and len(curr_key_map) == 61:
-        print_key_map(curr_key_map)
+       # print_key_map(curr_key_map)
         map_printed = True
 
     curr_frame_squares = get_key_contours(frame)

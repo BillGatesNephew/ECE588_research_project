@@ -21,5 +21,11 @@ function [] = runDetection(inputVideo, outputVideo)
     %% Create Keyboard Object 
     resultObject = keyboard2(inputVideo, openPoseFolder, keyLocationFolder);
 
-    %% Run any subsequent routines below
+    %% Run any subsequent routines with the result of keyboard2() below
+
+    
 end 
+
+
+
+

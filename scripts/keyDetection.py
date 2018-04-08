@@ -1,4 +1,5 @@
 import cv2
+import sys 
 import numpy as np 
 from math import sqrt
 
@@ -23,8 +24,8 @@ KEY_MAP = [
 
 
 ## General Parameters
-# Name of video being processed
-videoName = 'typing_vid.mp4'
+# Name of default video 
+defaultVideoName = 'typing_vid.mp4'
 # Threshold for how far a square can be off a baseline to be on a different row
 rowBaselineThreshold = 30
 # Number of final frame windows to show
@@ -345,6 +346,12 @@ def create_file(frame_number, key_map):
     new_file.close()
 
 ## Load and Adjust Initial Video Frame ##
+# Get command line args for videoname
+if len(sys.argv) < 2:
+    videoName = defaultVideoName
+else: 
+    videoName = sys.argv[1]
+
 # Load in video
 cap = cv2.VideoCapture(videoName)
 

@@ -35,13 +35,14 @@ outlier_distance_thresh = 1.1
 
 ## Contour Detection Parameters
 # Maximum valid size needed for a detected contour to be a key
-maxImageKeyArea = 7000  
+maxImageKeyArea = 9000  
 # Minimum valid size needed for a detected contour to be a key
+#minImageKeyArea = 1150
 minImageKeyArea = 900
 # Distance between centers of keys to be considered separate contours
-distanceThreshold = 10  
+distanceThreshold = 10
 # Maximum distance between countours in separate frames to be considered the same contour
-key_movement_thresh = 10
+key_movement_thresh = 5
 
 ## Text Label Parameters
 fontSize = 0.5
@@ -89,6 +90,10 @@ def center_y_position(square):
 def get_center(square):
     return (center_x_position(square), center_y_position(square))
 
+# Calculates the area of the contour
+def area(square):
+    return cv2.contourArea(square)
+
 # Returns the corners for a given contour in the following order:
 # [top left, top right, bottom left, bottom right]
 def extract_corners(square):
@@ -125,12 +130,12 @@ def get_key_contours(frame):
     resizedImage = rotatedFrame[rowShift : rows]
     # Convert to image to grayscale and apply binary thresholding
     grayImage = cv2.cvtColor(resizedImage, cv2.COLOR_BGR2GRAY)
-    _, binaryImage = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY_INV)
-
+    _, binaryImage = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
     ## Detect Squares in Image ##
     # Apply canny edge detection, and dilate results
     cannyImage = cv2.Canny(binaryImage, 0, 50, apertureSize=5)
-    dilatedCannyImage = cv2.dilate(cannyImage, None)
+   # dilatedCannyImage = cv2.dilate(cannyImage, None, iterations=2)
+    dilatedCannyImage = cannyImage
     # Find contours within the dilated image
     _, contours, _ = cv2.findContours(dilatedCannyImage, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     # Run square detection algorithm
@@ -138,7 +143,7 @@ def get_key_contours(frame):
     centerPositions = []
     for cnt in contours:
         # Approximate a polynomial for contour
-        cnt_len = 0.02*cv2.arcLength(cnt, True)
+        cnt_len = 0.03*cv2.arcLength(cnt, True)
         cnt = cv2.approxPolyDP(cnt, cnt_len, True)
         cntArea = cv2.contourArea(cnt)
         # Determine whether to keep contour or not
@@ -162,7 +167,10 @@ def get_key_contours(frame):
                     corner[1] += rowShift
                 squares.append(cnt)
                 centerPositions.append(center)
-
+    
+    squares.sort(key=area, reverse=False)
+    while len(squares) > 61:
+        squares.remove(squares[0])
     ## Remove Keys Not Near Others Using Outlier Method ##
     # Sort squares by Y-coordinate 
     squares.sort(key=center_y_position, reverse=False)
@@ -208,8 +216,8 @@ def get_key_contours(frame):
 
 def draw_squares(frame, curr_key_map, key_hidden, hide_keys):
     rotatedFrame = rotate_image(frame, 90)
-    if len(curr_key_map) < 61:
-        return rotatedFrame
+    #if len(curr_key_map) < 61:
+    #    return rotatedFrame
     keys_shown = 61
     ## Draw The Keys with Labels and Create Location Map ##
     for key in curr_key_map:
@@ -225,7 +233,8 @@ def draw_squares(frame, curr_key_map, key_hidden, hide_keys):
         text_center = (int(center[0] - textSize[0] / 2), int(center[1] + textSize[1] / 2))
         # Draw Squares and Text on Image
         cv2.drawContours(rotatedFrame, [square], -1, (0,255,0), 2)
-        cv2.putText(rotatedFrame, key, text_center, fontFamily, fontSize, (0, 0, 255), fontThickness, cv2.LINE_AA)
+        if len(curr_key_map) == 61:
+            cv2.putText(rotatedFrame, key, text_center, fontFamily, fontSize, (0, 0, 255), fontThickness, cv2.LINE_AA)
     # Write number of keys found
     height, width, _ = rotatedFrame.shape
     text_center = (width // 20, height // 20 )
@@ -238,7 +247,7 @@ def adjusted_key_map(curr_key_map, curr_frame_squares):
     new_key_map = {}
     key_hidden = {}
     ## Initial Case of Empty key_map ##
-    if len(curr_frame_squares) == 61:
+    if len(curr_key_map) < 61:
         for i in range(0, len(curr_frame_squares)):
             new_key_map[KEY_MAP[i]] = curr_frame_squares[i]
             key_hidden[KEY_MAP[i]] = False
@@ -360,6 +369,7 @@ curr_key_map = {}
 map_printed = False
 curr_frame = 0
 while(True):
+
     more_frames_left, frame = cap.read()
     if not more_frames_left:
         break  
@@ -370,7 +380,6 @@ while(True):
 
     curr_frame_squares = get_key_contours(frame)
     curr_key_map,key_hidden = adjusted_key_map(curr_key_map, curr_frame_squares)
-    
     imageWithSquares = draw_squares(frame, curr_key_map, key_hidden, False)
     rows,cols,_ = imageWithSquares.shape
     rowShift = (rows * 2) // 3
@@ -382,7 +391,6 @@ while(True):
 
     if cv2.waitKey(1) & 0xFF == 27:
         break
-
 
 cap.release()
 cv2.destroyAllWindows()

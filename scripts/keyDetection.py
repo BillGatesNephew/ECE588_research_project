@@ -312,7 +312,7 @@ def adjusted_key_map(curr_key_map, curr_frame_squares):
                 old_center = get_center(curr_key_map[new_key])
                 (x_diff, y_diff_1) = (new_center[0] - old_center[0], new_center[1] - old_center[1])
 
-        if similar_row_count == 1:
+        if similar_row_count <= 4:
             y_diff = y_diff_1
         for i in range(0,4):
             curr_lost_contour[i][0] = curr_lost_contour[i][0] + x_diff

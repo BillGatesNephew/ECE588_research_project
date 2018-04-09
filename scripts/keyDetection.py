@@ -27,7 +27,7 @@ KEY_MAP = [
 # Name of default video 
 defaultVideoName = 'typing_vid.mp4'
 # Threshold for how far a square can be off a baseline to be on a different row
-rowBaselineThreshold = 30
+rowBaselineThreshold = 20
 # Number of final frame windows to show
 frameNumber = 4
 # Outlier distance threshold
@@ -38,7 +38,7 @@ outlier_distance_thresh = 1.1
 maxImageKeyArea = 9000  
 # Minimum valid size needed for a detected contour to be a key
 #minImageKeyArea = 1150
-minImageKeyArea = 900
+minImageKeyArea = 800
 # Distance between centers of keys to be considered separate contours
 distanceThreshold = 10
 # Maximum distance between countours in separate frames to be considered the same contour
@@ -395,3 +395,20 @@ while(True):
 cap.release()
 cv2.destroyAllWindows()
 
+
+
+
+
+'''
+    What is typed in what video:
+        vid_1 - for the bst there is in the house there is no one else there
+        vid_2 - For the dog in the hen house there is nothing more relazing than a bone at the end of the day especially for the dog.
+        vid_3 - good blues and jazz
+        vid_4 - the good dog
+        vid_5 - Hello World
+
+
+
+
+
+'''

@@ -35,10 +35,10 @@ outlier_distance_thresh = 1.1
 
 ## Contour Detection Parameters
 # Maximum valid size needed for a detected contour to be a key
-maxImageKeyArea = 9000  
+maxImageKeyArea = 13000  
 # Minimum valid size needed for a detected contour to be a key
 #minImageKeyArea = 1150
-minImageKeyArea = 800
+minImageKeyArea = 1000
 # Distance between centers of keys to be considered separate contours
 distanceThreshold = 10
 # Maximum distance between countours in separate frames to be considered the same contour
@@ -130,13 +130,14 @@ def get_key_contours(frame):
     resizedImage = rotatedFrame[rowShift : rows]
     # Convert to image to grayscale and apply binary thresholding
     grayImage = cv2.cvtColor(resizedImage, cv2.COLOR_BGR2GRAY)
-    _, binaryImage = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
+    _, binaryImage = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY_INV)
     ## Detect Squares in Image ##
     # Apply canny edge detection, and dilate results
     cannyImage = cv2.Canny(binaryImage, 0, 50, apertureSize=5)
-   # dilatedCannyImage = cv2.dilate(cannyImage, None, iterations=2)
-    dilatedCannyImage = cannyImage
+    dilatedCannyImage = cv2.dilate(cannyImage, None, iterations=2)
+    #dilatedCannyImage = cannyImage
     # Find contours within the dilated image
+    cv2.imshow('binary', dilatedCannyImage)
     _, contours, _ = cv2.findContours(dilatedCannyImage, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     # Run square detection algorithm
     squares = []
@@ -419,6 +420,14 @@ cv2.destroyAllWindows()
 
 
 
+
+        for the good
+
+
+
+        for the good
+
+            for the good 
 
 
 

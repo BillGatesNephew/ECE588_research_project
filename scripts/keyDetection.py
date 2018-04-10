@@ -409,6 +409,14 @@ cv2.destroyAllWindows()
         vid_6 - the dog biscuit 
         (unsure) vid_7 - the dg took his
 
+        vid_8 - sappiro is a legend 
+        vid_9 - sappiro is a good teachear 
+        vid_10 - the food was awesome 
+        vid_11 - the biscuit was good
+        vid_12 - the ferry was home
+        vid_13 - the dog tree 
+        vid_14 - the cat took
+
 
 
 

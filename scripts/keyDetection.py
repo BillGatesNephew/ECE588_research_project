@@ -134,8 +134,8 @@ def get_key_contours(frame):
     ## Detect Squares in Image ##
     # Apply canny edge detection, and dilate results
     cannyImage = cv2.Canny(binaryImage, 0, 50, apertureSize=5)
-    dilatedCannyImage = cv2.dilate(cannyImage, None, iterations=2)
-    #dilatedCannyImage = cannyImage
+    #dilatedCannyImage = cv2.dilate(cannyImage, None, iterations=2)
+    dilatedCannyImage = cannyImage
     # Find contours within the dilated image
     cv2.imshow('binary', dilatedCannyImage)
     _, contours, _ = cv2.findContours(dilatedCannyImage, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)

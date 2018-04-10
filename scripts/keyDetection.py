@@ -406,6 +406,11 @@ cv2.destroyAllWindows()
         vid_3 - good blues and jazz
         vid_4 - the good dog
         vid_5 - Hello World
+        vid_6 - the dog biscuit 
+        (unsure) vid_7 - the dg took his
+
+
+
 
 
 
